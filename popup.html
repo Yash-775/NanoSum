@@ -3,16 +3,33 @@
 <head>
     <title>NanoSum</title>
     <style>
-        body { width: 300px; padding: 10px; font-family: sans-serif; }
+        body { width: 320px; padding: 10px; font-family: sans-serif; }
         button { width: 100%; padding: 10px; margin-bottom: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
         #summary-result { border: 1px solid #ccc; padding: 10px; min-height: 50px; white-space: pre-wrap; background-color: #f9f9f9; }
         .loading { color: #555; font-style: italic; }
+        footer { margin-top: 10px; text-align: right; color: #777; }
+        #translation-controls { margin-top: 15px; display: flex; gap: 10px; }
+        #lang-select { flex-grow: 1; padding: 5px; }
+        #translate-btn { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #007BFF; }
     </style>
 </head>
 <body>
     <h2>NanoSum AI</h2>
-    <button id="summarize-btn">Summarize Page</button>
+    <button id="summarize-page-btn">Summarize Page</button>
     <div id="summary-result" class="loading">Click Summarize to begin...</div>
+
+    <div id="translation-controls" style="display: none;">
+        <select id="lang-select">
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="hi">Hindi</option>
+            <option value="ja">Japanese</option>
+            <option value="zh">Chinese</option>
+        </select>
+        <button id="translate-btn">Translate</button>
+    </div>
+
     <script src="popup.js"></script>
 </body>
 </html>

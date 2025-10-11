@@ -1,61 +1,159 @@
-// popup.js (DEFINITIVE FINAL VERSION)
 
-document.getElementById('summarize-btn').addEventListener('click', async () => {
-  const resultDiv = document.getElementById('summary-result');
-  resultDiv.textContent = 'Starting summarization...';
+let originalTitle = "";
+let originalMainSummary = "";
+let originalKeyPointsHTML = "";
+let originalSourceName = "";
+
+const summarizeBtn = document.getElementById('summarize-page-btn');
+const resultDiv = document.getElementById('summary-result');
+const translationControls = document.getElementById('translation-controls');
+const langSelect = document.getElementById('lang-select');
+const translateBtn = document.getElementById('translate-btn');
+
+summarizeBtn.addEventListener('click', async () => {
+  resultDiv.innerHTML = '';
+  resultDiv.textContent = 'Starting analysis...';
   resultDiv.classList.add('loading');
+  translationControls.style.display = 'none';
 
   try {
-    // Step 1: Check for the global Summarizer object.
-    if (!window.Summarizer) {
-      throw new Error('Built-in AI (Summarizer) is not available. Check Chrome version/flags.');
-    }
+    if (!window.Summarizer) throw new Error('Summarizer AI is not available.');
 
-    // Step 2: Get ONLY the main title from the active web page.
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
     const injectionResults = await chrome.scripting.executeScript({
       target: { tabId: activeTab.id },
-      func: titleExtractor, // <-- Using our new, super-concise extractor
+      func: smartContentExtractor,
     });
     
-    const pageTitle = injectionResults[0].result;
-    if (!pageTitle || pageTitle.trim() === '') {
-        throw new Error("Could not extract a title from the page.");
+    const { title, content } = injectionResults[0].result;
+    if (!content || content.trim().length < 100) {
+      throw new Error("Could not extract enough meaningful content.");
     }
-    resultDiv.textContent = `Topic extracted: "${pageTitle}". Calling AI...`;
+    resultDiv.textContent = 'Generating key points...';
 
-    // Step 3: Create the Summarizer using the EXACT options from your successful test.
-    const summarizerOptions = {
-      type: 'tldr',
-      length: 'short',
-      format: 'plain-text',
-      outputLanguage: 'en-US'
-    };
+    const keyPointsSummarizer = await Summarizer.create({ 
+        type: 'key-points', 
+        length: 'long',
+        outputLanguage: 'en-US' 
+    });
+    const rawKeyPointsText = await keyPointsSummarizer.summarize(content);
     
-    const summarizer = await Summarizer.create(summarizerOptions);
+    const keyPointsArray = rawKeyPointsText.split('\n').filter(line => line.trim() !== '');
+    
+    originalMainSummary = keyPointsArray.map(line => 
+        line.replace(/^[\*\-]\s*/, '').trim()
+    ).join(' ');
 
-    // Step 4: Run the summarization on the page title.
-    resultDiv.textContent = 'Model is ready. Summarizing topic...';
-    const summaryResult = await summarizer.summarize(pageTitle);
+    originalKeyPointsHTML = '<ul>';
+    keyPointsArray.forEach(point => {
+        const cleanPoint = point.replace(/^[\*\-]\s*/, '').trim();
+        originalKeyPointsHTML += `<li>${cleanPoint}</li>`;
+    });
+    originalKeyPointsHTML += '</ul>';
 
-    // Step 5: Display the final result.
+    originalTitle = title;
+    const url = new URL(activeTab.url);
+    originalSourceName = url.hostname.replace(/^www\./, '');
+
+    const initialHTML = `<h3>Summary</h3><p><b>${originalTitle}:</b> ${originalMainSummary}</p>
+                         <h3>Key Points</h3>${originalKeyPointsHTML}
+                         <footer><small>Source: ${originalSourceName}</small></footer>`;
+    
+    resultDiv.innerHTML = initialHTML;
+    translationControls.style.display = 'flex';
     resultDiv.classList.remove('loading');
-    resultDiv.textContent = summaryResult; // The result is a direct string now with these options
-
+    
   } catch (error) {
-    console.error("Summarization failed:", error);
+    console.error("Operation failed:", error);
     resultDiv.classList.remove('loading');
     resultDiv.textContent = `Error: ${error.message}`;
   }
 });
 
-// This new function just gets the main H1 title, or the document title as a fallback.
-function titleExtractor() {
-  const h1 = document.querySelector('h1');
-  if (h1 && h1.innerText) {
-    return h1.innerText.trim();
+// Event Listener for the Translate Button 
+translateBtn.addEventListener('click', async () => {
+  resultDiv.innerHTML = '<p><em>Translating...</em></p>';
+
+  try {
+    if (!window.Translator) throw new Error('Translator AI is not available.');
+    
+    const selectedLang = langSelect.value;
+    const translator = await Translator.create({ 
+      sourceLanguage: 'en', 
+      targetLanguage: selectedLang 
+    });
+
+    const translatedTitle = await translator.translate(originalTitle);
+    const translatedMainSummary = await translator.translate(originalMainSummary);
+    
+    const parser = new DOMParser();
+    const keyPointsDoc = parser.parseFromString(originalKeyPointsHTML, 'text/html');
+    const listItems = keyPointsDoc.querySelectorAll('li');
+    let numberedKeyPoints = "";
+    Array.from(listItems).forEach((item, index) => {
+      numberedKeyPoints += `${index + 1}. ${item.innerText}\n`;
+    });
+
+    const translatedBlock = await translator.translate(numberedKeyPoints);
+    
+    let translatedKeyPointsHTML = '<ul>';
+    // Split the block by the number pattern (e.g., "2.", "3.").
+    // This correctly handles the single-paragraph output.
+    const translatedPoints = translatedBlock.split(/\d+\.\s*/);
+
+    // The first item in the split is usually empty, so we loop from the second item.
+    for (let i = 1; i < translatedPoints.length; i++) {
+        const cleanPoint = translatedPoints[i].trim();
+        if (cleanPoint) {
+            translatedKeyPointsHTML += `<li>${cleanPoint}</li>`;
+        }
+    }
+    translatedKeyPointsHTML += '</ul>';
+
+    const finalTranslatedHTML = `<h3>Summary</h3><p><b>${translatedTitle}:</b> ${translatedMainSummary}</p>
+                                 <h3>Key Points</h3>${translatedKeyPointsHTML}
+                                 <footer><small>Source: ${originalSourceName}</small></footer>`;
+
+    resultDiv.innerHTML = finalTranslatedHTML;
+
+  } catch (error) {
+    console.error("Translation failed:", error);
+    resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
   }
-  // If no H1 is found, use the page's main title
-  return document.title;
+});
+
+// Function to extract content from the page
+function smartContentExtractor() {
+  const h1 = document.querySelector('h1');
+  let pageTitle = h1 ? h1.innerText.trim() : document.title;
+  let content = "";
+  let paragraphsAdded = 0;
+
+  if (h1) {
+    let currentNode = h1;
+    while (currentNode && paragraphsAdded < 4) {
+      currentNode = currentNode.nextElementSibling;
+      if (currentNode && currentNode.tagName === 'P') {
+        const pText = currentNode.innerText.trim();
+        if (pText.length > 100) {
+          content += pText + "\n\n";
+          paragraphsAdded++;
+        }
+      }
+    }
+  }
+
+  if (content.length < 100) {
+    const mainContent = document.querySelector('main') || document.querySelector('article') || document.body;
+    const paragraphs = mainContent.querySelectorAll('p');
+    for (let i = 0; i < paragraphs.length && paragraphsAdded < 5; i++) {
+      const pText = paragraphs[i].innerText.trim();
+      if (pText.length > 150) { 
+        content += `${pText}\n\n`;
+        paragraphsAdded++;
+      }
+    }
+  }
+
+  return { title: pageTitle, content: content.substring(0, 10000) };
 }
