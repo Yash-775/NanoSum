@@ -1,20 +1,34 @@
+// popup.js
 
+// Global variables to store our content
 let originalTitle = "";
 let originalMainSummary = "";
 let originalKeyPointsHTML = "";
 let originalSourceName = "";
+let originalContent = ""; // To store the raw extracted content for rewriting
 
+// Get references to all UI elements 
 const summarizeBtn = document.getElementById('summarize-page-btn');
 const resultDiv = document.getElementById('summary-result');
 const translationControls = document.getElementById('translation-controls');
 const langSelect = document.getElementById('lang-select');
 const translateBtn = document.getElementById('translate-btn');
 
+// Get references to advanced controls
+const advancedControls = document.getElementById('advanced-controls');
+const rewriteSelect = document.getElementById('rewrite-select');
+const rewriteBtn = document.getElementById('rewrite-btn');
+const customPromptInput = document.getElementById('custom-prompt-input');
+const customPromptBtn = document.getElementById('custom-prompt-btn');
+
+
+// Main Summarize Button Listener 
 summarizeBtn.addEventListener('click', async () => {
   resultDiv.innerHTML = '';
   resultDiv.textContent = 'Starting analysis...';
   resultDiv.classList.add('loading');
   translationControls.style.display = 'none';
+  advancedControls.style.display = 'none'; // Hide advanced controls
 
   try {
     if (!window.Summarizer) throw new Error('Summarizer AI is not available.');
@@ -29,6 +43,10 @@ summarizeBtn.addEventListener('click', async () => {
     if (!content || content.trim().length < 100) {
       throw new Error("Could not extract enough meaningful content.");
     }
+    
+    // Store the raw content globally
+    originalContent = content;
+    
     resultDiv.textContent = 'Generating key points...';
 
     const keyPointsSummarizer = await Summarizer.create({ 
@@ -61,6 +79,7 @@ summarizeBtn.addEventListener('click', async () => {
     
     resultDiv.innerHTML = initialHTML;
     translationControls.style.display = 'flex';
+    advancedControls.style.display = 'block'; // Show advanced controls
     resultDiv.classList.remove('loading');
     
   } catch (error) {
@@ -70,7 +89,7 @@ summarizeBtn.addEventListener('click', async () => {
   }
 });
 
-// Event Listener for the Translate Button 
+// Translate Button Listener
 translateBtn.addEventListener('click', async () => {
   resultDiv.innerHTML = '<p><em>Translating...</em></p>';
 
@@ -97,11 +116,7 @@ translateBtn.addEventListener('click', async () => {
     const translatedBlock = await translator.translate(numberedKeyPoints);
     
     let translatedKeyPointsHTML = '<ul>';
-    // Split the block by the number pattern (e.g., "2.", "3.").
-    // This correctly handles the single-paragraph output.
     const translatedPoints = translatedBlock.split(/\d+\.\s*/);
-
-    // The first item in the split is usually empty, so we loop from the second item.
     for (let i = 1; i < translatedPoints.length; i++) {
         const cleanPoint = translatedPoints[i].trim();
         if (cleanPoint) {
@@ -122,7 +137,71 @@ translateBtn.addEventListener('click', async () => {
   }
 });
 
-// Function to extract content from the page
+// Rewrite Button Listener 
+rewriteBtn.addEventListener('click', async () => {
+  if (!originalContent) return;
+
+  resultDiv.innerHTML = '<p><em>Rewriting...</em></p>';
+  resultDiv.classList.add('loading');
+  
+  try {
+    if (!window.Rewriter) throw new Error('Rewriter AI is not available.');
+
+    const selectedOption = rewriteSelect.value;
+
+    let options = {};
+    if (selectedOption === 'simplify') {
+      options.length = 'short';
+    } else if (selectedOption === 'elaborate') {
+      options.length = 'long';
+    } else if (selectedOption === 'formal') {
+      options.tone = 'formal';
+    } else if (selectedOption === 'casual') {
+      options.tone = 'casual';
+    }
+
+
+    const rewriter = await Rewriter.create();
+    
+    const rewrittenText = await rewriter.rewrite(originalContent, options);
+    resultDiv.innerHTML = `<h3>Rewritten Text (Style: ${selectedOption})</h3><p>${rewrittenText}</p>`;
+    resultDiv.classList.remove('loading');
+
+  } catch (error) {
+    console.error("Rewrite failed:", error);
+    resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+  }
+});
+
+// Custom Prompt Button Listener
+customPromptBtn.addEventListener('click', async () => {
+  const customPrompt = customPromptInput.value;
+  if (!originalContent || !customPrompt) return;
+
+  resultDiv.innerHTML = '<p><em>Running custom prompt...</em></p>';
+  resultDiv.classList.add('loading');
+
+  try {
+    if (!window.Writer) throw new Error('Writer AI is not available.');
+
+    const writer = await Writer.create();
+    
+    const fullPrompt = `${customPrompt}:\n\n---\n\n${originalContent}`;
+    
+    const newText = await writer.write(fullPrompt);
+
+    // Display the new text
+    resultDiv.innerHTML = `<h3>Custom Result</h3><p>${newText}</p>`;
+    resultDiv.classList.remove('loading');
+
+  } catch (error) {
+    console.error("Custom prompt failed:", error);
+    resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+  }
+});
+
+
+// Content Extractor Function
 function smartContentExtractor() {
   const h1 = document.querySelector('h1');
   let pageTitle = h1 ? h1.innerText.trim() : document.title;

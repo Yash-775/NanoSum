@@ -5,18 +5,29 @@
     <style>
         body { width: 320px; padding: 10px; font-family: sans-serif; }
         button { width: 100%; padding: 10px; margin-bottom: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        #summary-page-btn { background-color: #4CAF50; } /* Main button */
         #summary-result { border: 1px solid #ccc; padding: 10px; min-height: 50px; white-space: pre-wrap; background-color: #f9f9f9; }
         .loading { color: #555; font-style: italic; }
         footer { margin-top: 10px; text-align: right; color: #777; }
+        
+        /* Translation Controls */
         #translation-controls { margin-top: 15px; display: flex; gap: 10px; }
         #lang-select { flex-grow: 1; padding: 5px; }
         #translate-btn { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #007BFF; }
+
+        /* NEW: Advanced Actions */
+        #advanced-controls { margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
+        #advanced-controls h4 { margin-top: 0; margin-bottom: 8px; }
+        .action-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .action-group select, .action-group input { flex-grow: 1; padding: 5px; }
+        .action-group button { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #5a6268; }
+        #custom-prompt-input { width: 100%; box-sizing: border-box; padding: 5px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <h2>NanoSum AI</h2>
-    <button id="summarize-page-btn">Summarize Page</button>
-    <div id="summary-result" class="loading">Click Summarize to begin...</div>
+    <button id="summarize-page-btn">Summarize & Analyze</button>
+    <div id="summary-result" class="loading">Click to begin...</div>
 
     <div id="translation-controls" style="display: none;">
         <select id="lang-select">
@@ -28,6 +39,22 @@
             <option value="zh">Chinese</option>
         </select>
         <button id="translate-btn">Translate</button>
+    </div>
+
+    <div id="advanced-controls" style="display: none;">
+        <h4>Advanced Actions</h4>
+        <div class="action-group">
+            <select id="rewrite-select">
+                <option value="simplify">Rewrite (Simpler)</option>
+                <option value="elaborate">Rewrite (More Detailed)</option>
+                <option value="formal">Tone: Formal</option>
+                <option value="casual">Tone: Casual</option>
+            </select>
+            <button id="rewrite-btn">Rewrite</button>
+        </div>
+        <h4>Custom Prompt</h4>
+        <input type="text" id="custom-prompt-input" placeholder="e.g., Explain this to a 5-year-old">
+        <button id="custom-prompt-btn" style="background-color: #333; width: 100%;">Run Custom Prompt</button>
     </div>
 
     <script src="popup.js"></script>
