@@ -5,40 +5,38 @@
     <style>
         body { width: 320px; padding: 10px; font-family: sans-serif; }
         button { width: 100%; padding: 10px; margin-bottom: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        #summary-page-btn { background-color: #4CAF50; } 
+        #summary-page-btn { background-color: #4CAF50; }
         #summary-result { border: 1px solid #ccc; padding: 10px; min-height: 50px; white-space: pre-wrap; background-color: #f9f9f9; }
         .loading { color: #555; font-style: italic; }
         footer { margin-top: 10px; text-align: right; color: #777; }
         
-        /* Translation Controls */
         #translation-controls { margin-top: 15px; display: flex; gap: 10px; }
         #lang-select { flex-grow: 1; padding: 5px; }
         #translate-btn { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #007BFF; }
 
-        /* Advanced Actions */
         #advanced-controls { margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
         #advanced-controls h4 { margin-top: 0; margin-bottom: 8px; }
         .action-group { display: flex; gap: 10px; margin-bottom: 10px; }
         .action-group select, .action-group input { flex-grow: 1; padding: 5px; }
         .action-group button { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #5a6268; }
-        #custom-prompt-input { width: 100%; box-sizing: border-box; padding: 5px; margin-bottom: 5px; }
+        #writer-prompt-input, #prompt-api-input { width: 100%; box-sizing: border-box; padding: 5px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <h2>NanoSum AI</h2>
-    <button id="summarize-page-btn">Summarize & Analyze</button>
+    <button id="summary-page-btn">Summarize & Analyze</button>
     <div id="summary-result" class="loading">Click to begin...</div>
 
     <div id="translation-controls" style="display: none;">
-        <select id="lang-select">
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-            <option value="hi">Hindi</option>
-            <option value="ja">Japanese</option>
-            <option value="zh">Chinese</option>
-        </select>
-        <button id="translate-btn">Translate</button>
+    <label for="lang-select" style="margin-right: 5px; align-self: center;">Translate to:</label>
+    <select id="lang-select">
+        <option value="">English (Default)</option> <option value="en">English</option>       <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="hi">Hindi</option>
+        <option value="ja">Japanese</option>
+        <option value="zh">Chinese</option>
+    </select>
     </div>
 
     <div id="advanced-controls" style="display: none;">
@@ -51,11 +49,16 @@
                 <option value="casual">Tone: Casual</option>
             </select>
             <button id="rewrite-btn">Rewrite</button>
-            <!-- <button id="proofread-btn" style="background-color: #ffc107; color: #333;">Proofread</button> -->
+            <button id="proofread-btn" style="background-color: #ffc107; color: #333;">Proofread</button>
         </div>
+        
         <h4>Creative Writing (Writer API)</h4>
         <input type="text" id="writer-prompt-input" placeholder="e.g., Write a poem about this topic">
         <button id="writer-prompt-btn" style="background-color: #333; width: 100%;">Run Writer</button>
+
+        <h4 style="margin-top: 15px;">Ask a Question (Prompt API)</h4>
+        <input type="text" id="prompt-api-input" placeholder="e.g., What are the key features?">
+        <button id="prompt-api-btn" style="background-color: #d33; width: 100%;">Ask Prompt</button>
     </div>
 
     <script src="popup.js"></script>

@@ -7,16 +7,25 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "ai" 
+    "ai",
+    "sidePanel"
   ],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "action": {
-    "default_popup": "popup.html"
+  "side_panel": {
+    "default_path": "popup.html"
   },
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
 
   "trial_tokens": [
     "AuGRL/6Icm8Hapb+fd377iKa3X6pq/R+YY5QUEupV3OUTuUH2d5IhXNihQx12pAcEyvPeNKoAAbV0Pb2bmvX0AMAAABseyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZGZibWVwYWRjaWNtcG5pZXBqZ3BuZ2xrcGlwZW5sbGIiLCJmZWF0dXJlIjoiQUlXcml0ZXJBUEkiLCJleHBpcnkiOjE3Njk0NzIwMDB9",
