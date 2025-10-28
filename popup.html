@@ -5,7 +5,7 @@
     <style>
         body { width: 320px; padding: 10px; font-family: sans-serif; }
         button { width: 100%; padding: 10px; margin-bottom: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        #summary-page-btn { background-color: #4CAF50; } /* Main button */
+        #summary-page-btn { background-color: #4CAF50; } 
         #summary-result { border: 1px solid #ccc; padding: 10px; min-height: 50px; white-space: pre-wrap; background-color: #f9f9f9; }
         .loading { color: #555; font-style: italic; }
         footer { margin-top: 10px; text-align: right; color: #777; }
@@ -15,7 +15,7 @@
         #lang-select { flex-grow: 1; padding: 5px; }
         #translate-btn { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #007BFF; }
 
-        /* NEW: Advanced Actions */
+        /* Advanced Actions */
         #advanced-controls { margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
         #advanced-controls h4 { margin-top: 0; margin-bottom: 8px; }
         .action-group { display: flex; gap: 10px; margin-bottom: 10px; }
@@ -51,10 +51,11 @@
                 <option value="casual">Tone: Casual</option>
             </select>
             <button id="rewrite-btn">Rewrite</button>
+            <!-- <button id="proofread-btn" style="background-color: #ffc107; color: #333;">Proofread</button> -->
         </div>
-        <h4>Custom Prompt</h4>
-        <input type="text" id="custom-prompt-input" placeholder="e.g., Explain this to a 5-year-old">
-        <button id="custom-prompt-btn" style="background-color: #333; width: 100%;">Run Custom Prompt</button>
+        <h4>Creative Writing (Writer API)</h4>
+        <input type="text" id="writer-prompt-input" placeholder="e.g., Write a poem about this topic">
+        <button id="writer-prompt-btn" style="background-color: #333; width: 100%;">Run Writer</button>
     </div>
 
     <script src="popup.js"></script>

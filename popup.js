@@ -13,13 +13,14 @@ const resultDiv = document.getElementById('summary-result');
 const translationControls = document.getElementById('translation-controls');
 const langSelect = document.getElementById('lang-select');
 const translateBtn = document.getElementById('translate-btn');
+const proofreadBtn = document.getElementById('proofread-btn');
 
 // Get references to advanced controls
 const advancedControls = document.getElementById('advanced-controls');
 const rewriteSelect = document.getElementById('rewrite-select');
 const rewriteBtn = document.getElementById('rewrite-btn');
-const customPromptInput = document.getElementById('custom-prompt-input');
-const customPromptBtn = document.getElementById('custom-prompt-btn');
+const writerPromptInput = document.getElementById('writer-prompt-input');
+const writerPromptBtn = document.getElementById('writer-prompt-btn');
 
 
 // Main Summarize Button Listener 
@@ -173,29 +174,50 @@ rewriteBtn.addEventListener('click', async () => {
   }
 });
 
-// Custom Prompt Button Listener
-customPromptBtn.addEventListener('click', async () => {
-  const customPrompt = customPromptInput.value;
-  if (!originalContent || !customPrompt) return;
+// Writer (Creative) Button Listener
+writerPromptBtn.addEventListener('click', async () => {
+  let customPrompt = writerPromptInput.value;
+  if (!originalTitle || !customPrompt) return;
 
-  resultDiv.innerHTML = '<p><em>Running custom prompt...</em></p>';
+  resultDiv.innerHTML = '<p><em>Proofreading your prompt...</em></p>';
   resultDiv.classList.add('loading');
 
   try {
-    if (!window.Writer) throw new Error('Writer AI is not available.');
-
-    const writer = await Writer.create();
+    // Proofread the user's prompt
+    if (!window.Proofreader) throw new Error('Proofreader AI is not available.');
     
-    const fullPrompt = `${customPrompt}:\n\n---\n\n${originalContent}`;
+    const proofreader = await Proofreader.create({ 
+      expectedInputLanguages: ['en'] 
+    });
+    
+    const proofreadResult = await proofreader.proofread(customPrompt);
+    
+    const correctedPrompt = proofreadResult.correctedInput; 
+    
+    // Failsafe check
+    if (typeof correctedPrompt === 'undefined') {
+        console.error("'.correctedInput' property is undefined! Defaulting to original prompt.");
+        writerPromptInput.value = customPrompt; // Use original
+        resultDiv.innerHTML = '<p><em>Proofread failed. Running writer...</em></p>';
+    } else {
+        writerPromptInput.value = correctedPrompt; // Use corrected
+        resultDiv.innerHTML = '<p><em>Running writer with corrected prompt...</em></p>';
+    }
+
+    // Use the prompt to call the Writer AI
+    if (!window.Writer) throw new Error('Writer AI is not available.');
+    
+    const writer = await Writer.create({ outputLanguage: 'en' });
+    
+    const fullPrompt = `${writerPromptInput.value}: ${originalTitle}`; 
     
     const newText = await writer.write(fullPrompt);
 
-    // Display the new text
-    resultDiv.innerHTML = `<h3>Custom Result</h3><p>${newText}</p>`;
+    resultDiv.innerHTML = `<h3>Writer Result</h3><p>${newText}</p>`;
     resultDiv.classList.remove('loading');
 
   } catch (error) {
-    console.error("Custom prompt failed:", error);
+    console.error("Writer prompt failed:", error);
     resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
   }
 });
