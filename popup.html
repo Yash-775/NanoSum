@@ -2,64 +2,239 @@
 <html>
 <head>
     <title>NanoSum</title>
-    <style>
-        body { width: 320px; padding: 10px; font-family: sans-serif; }
-        button { width: 100%; padding: 10px; margin-bottom: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        #summary-page-btn { background-color: #4CAF50; }
-        #summary-result { border: 1px solid #ccc; padding: 10px; min-height: 50px; white-space: pre-wrap; background-color: #f9f9f9; }
-        .loading { color: #555; font-style: italic; }
-        footer { margin-top: 10px; text-align: right; color: #777; }
-        
-        #translation-controls { margin-top: 15px; display: flex; gap: 10px; }
-        #lang-select { flex-grow: 1; padding: 5px; }
-        #translate-btn { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #007BFF; }
+    <meta charset="UTF-8">
+    <style>       
+        body {
+            font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+            min-width: 340px;
+            padding: 16px;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #202124;
+            box-sizing: border-box;
+        }
 
-        #advanced-controls { margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
-        #advanced-controls h4 { margin-top: 0; margin-bottom: 8px; }
-        .action-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        .action-group select, .action-group input { flex-grow: 1; padding: 5px; }
-        .action-group button { width: auto; flex-grow: 2; margin-bottom: 0; background-color: #5a6268; }
-        #writer-prompt-input, #prompt-api-input { width: 100%; box-sizing: border-box; padding: 5px; margin-bottom: 5px; }
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-track { background: #f8f9fa; }
+        body::-webkit-scrollbar-thumb { background-color: #1a73e8; border-radius: 4px; }
+
+        h2 { font-size: 20px; font-weight: 500; margin: 0 0 16px 0; color: #1a73e8; }
+        h3 { font-size: 16px; font-weight: 500; color: #1a73e8; border-bottom: 1px solid #dadce0; padding-bottom: 4px; margin-top: 20px; margin-bottom: 10px; }
+        h4 { font-size: 14px; font-weight: 500; color: #3c4043; margin-top: 16px; margin-bottom: 8px; }
+
+        #summary-result {
+            display: block;
+            background-color: #ffffff;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            color: #5f6368;
+            font-style: italic;
+        }
+        
+        #summary-result.loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #5f6368;
+            font-style: italic;
+            gap: 15px;
+            min-height: 150px;
+        }
+        #summary-result.loading::before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid #dadce0;
+            border-top-color: #1a73e8;
+            animation: spin 1s linear infinite;
+        }
+        
+        #summary-result:not(.loading) {
+            text-align: left;
+        }
+        #summary-result:not(.loading) h3 {
+            color: #1a73e8;
+            font-style: normal;
+        }
+         #summary-result:not(.loading) p,
+         #summary-result:not(.loading) ul {
+            color: #202124;
+            font-style: normal;
+         }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer { margin-top: 10px; text-align: right; color: #5f6368; }
+
+        /* Welcome screen */
+        #welcome-screen {
+            text-align: center;
+            color: #5f6368;
+            padding-top: 16px;
+            margin-top: 26px;
+            border-top: 1px solid #dadce0;
+        }
+        #welcome-screen img {
+            width: 320px;
+            margin-bottom: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #welcome-screen h4 {
+            margin: 0 0 8px 0;
+            color: #1a73e8;
+            font-size: 16px;
+        }
+        #welcome-screen p {
+            margin: 0 auto;
+            font-size: 14px;
+            max-width: 280px;
+            padding-top: 10px;
+            line-height: 2;
+        }
+
+        /* Buttons & Dropdowns */
+        button, select {
+            border: none; cursor: pointer; border-radius: 999px;
+            padding: 10px 16px; font-size: 14px; font-weight: 500;
+            transition: all 0.2s ease; box-sizing: border-box; width: 100%;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        button:hover { opacity: 0.85; }
+        svg { width: 18px; height: 18px; fill: currentColor; }
+        #summary-page-btn {
+            background-color: #1a73e8; color: white; padding: 12px;
+            font-size: 15px; margin-bottom: 16px;
+        }
+        #advanced-controls button { background-color: #3c4043; color: white; }
+        select {
+            background-color: #fff; border: 1px solid #dadce0; color: #3c4043;
+            justify-content: flex-start; appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235f6368'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; background-size: 20px;
+        }
+        #rewrite-btn{
+            padding: 10px; 
+        }
+        #writer-prompt-btn{
+            margin-top:10px;
+        }
+        #prompt-api-btn{
+            margin-top:10px;
+            background-color: #1a73e8;
+        }
+
+        /* EXPORT BUTTON ADDED BACK  */
+        #translation-controls {
+            margin-top: 16px; padding-top: 16px; border-top: 1px solid #dadce0;
+            display: flex; gap: 8px; align-items: center;
+        }
+        #lang-select {
+            flex-grow: 1; 
+        }
+        #export-btn {
+            flex-grow: 0; 
+            width: 44px; 
+            padding: 10px 12px;
+            background-color: #1a73e8;
+        }
+        
+        #advanced-controls {
+            margin-top: 16px; padding-top: 16px; border-top: 1px solid #dadce0;
+        }
+        .action-group { display: flex; gap: 8px; margin-bottom: 15px; }
+        .action-group select { flex-grow: 3; flex-basis: 0; }
+        .action-group button { flex-grow: 0; flex-basis: 0; padding-left: 12px; padding-right: 12px; }
+        
+        input[type="text"] {
+            padding: 10px 16px; border: 1px solid #dadce0; border-radius: 12px;
+            font-size: 14px; width: 100%; box-sizing: border-box; margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <h2>NanoSum AI</h2>
-    <button id="summary-page-btn">Summarize & Analyze</button>
-    <div id="summary-result" class="loading">Click to begin...</div>
-
+    <button id="summary-page-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6zM8 18h8v-2H8v2zm0-4h8v-2H8v2zm0-4h5V8H8v2z"/></svg>
+        <span>Summarize & Analyze</span>
+    </button>
+    
+    <div id="summary-result">
+        Click "Summarize & Analyze" to see the magic happen!
+    </div>
+    
     <div id="translation-controls" style="display: none;">
-    <label for="lang-select" style="margin-right: 5px; align-self: center;">Translate to:</label>
-    <select id="lang-select">
-        <option value="">English (Default)</option> <option value="en">English</option>       <option value="es">Spanish</option>
-        <option value="fr">French</option>
-        <option value="de">German</option>
-        <option value="hi">Hindi</option>
-        <option value="ja">Japanese</option>
-        <option value="zh">Chinese</option>
-    </select>
+        <label for="lang-select" style="font-size: 14px; color: #5f6368; white-space: nowrap;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width:18px; height:18px; vertical-align: middle; margin-right: 4px;"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+            <span>Translate to:</span>
+        </label>
+        <select id="lang-select">
+            <option value="">English (Default)</option>
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="hi">Hindi</option>
+            <option value="ja">Japanese</option>
+            <option value="zh">Chinese</option>
+        </select>
+        <button id="export-btn" title="Export as .txt">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        </button>
     </div>
 
     <div id="advanced-controls" style="display: none;">
         <h4>Advanced Actions</h4>
         <div class="action-group">
+            <label for="rewrite-select" class="visually-hidden">Rewrite Style</label>
             <select id="rewrite-select">
                 <option value="simplify">Rewrite (Simpler)</option>
                 <option value="elaborate">Rewrite (More Detailed)</option>
                 <option value="formal">Tone: Formal</option>
                 <option value="casual">Tone: Casual</option>
             </select>
-            <button id="rewrite-btn">Rewrite</button>
-            <button id="proofread-btn" style="background-color: #ffc107; color: #333;">Proofread</button>
+            <button id="rewrite-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+            <button id="proofread-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                <span>Proofread</span>
+            </button>
         </div>
         
-        <h4>Creative Writing (Writer API)</h4>
+        <h4>Creative Writing</h4>
+        <label for="writer-prompt-input" class="visually-hidden">Creative Writing Prompt</label>
         <input type="text" id="writer-prompt-input" placeholder="e.g., Write a poem about this topic">
-        <button id="writer-prompt-btn" style="background-color: #333; width: 100%;">Run Writer</button>
+        <button id="writer-prompt-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <span>Run Writer</span>
+        </button>
 
-        <h4 style="margin-top: 15px;">Ask a Question (Prompt API)</h4>
+        <h4 style="margin-top: 15px;">Ask a Question</h4>
+        <label for="prompt-api-input" class="visually-hidden">Ask a Question Prompt</label>
         <input type="text" id="prompt-api-input" placeholder="e.g., What are the key features?">
-        <button id="prompt-api-btn" style="background-color: #d33; width: 100%;">Ask Prompt</button>
+        <button id="prompt-api-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12zM7 9h10v2H7zm0 4h7v2H7z"/></svg>
+            <span>Ask Prompt</span>
+        </button>
     </div>
+    
+    <div id="welcome-screen">
+        <img src="icons/MEMO.png" alt="NanoSum Mascot" width="100">
+        <p>Using on-device Gemini Nano.<br>Your data never leaves your browser.</p>
+    </div>
+
+    <style>.visually-hidden{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;}</style>
 
     <script src="popup.js"></script>
 </body>
